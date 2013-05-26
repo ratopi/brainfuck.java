@@ -6,7 +6,7 @@ Do
 
 to compile and
 
-    java -jar target/brainfuck-2-SNAPSHOT.jar
+    java -jar target/brainfuck-2.0.1-SNAPSHOT.jar
 
 to run.
 

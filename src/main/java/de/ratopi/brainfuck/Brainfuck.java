@@ -1,6 +1,7 @@
 package de.ratopi.brainfuck;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p/>
@@ -8,41 +9,52 @@ import java.util.ArrayList;
  * 
  * @author Ralf Th. Pietsch <ratopi@abwesend.de>
  */
-public class Brainfuck
+public class Brainfuck implements Runnable
 {
-	public static void main( String[] args )
+	public static void main( final String[] args )
 	{
-		final String program;
-		
-		if ( args.length > 0 )
+		if ( args.length == 0 )
 		{
-			program = args[ 0 ];
-		}
-		else
-		{
-			program = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.";
+			final String helloWorld = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.";
+			System.out.println( "Usage: java " + Brainfuck.class.getName() + " <brainfuck code> [<brainfuck code> ...]" );
+			System.out.println();
+			System.out.println( "If you are new to brainfuck, try:" );
+			System.out.println( "java " + Brainfuck.class.getName() + " \"" + helloWorld + "\"" );
+			System.exit( 1 );
 		}
 
-		new Brainfuck( program ).run();
+		for ( final String program : args )
+		{
+			new Brainfuck( program ).run();
+		}
 	}
+
+	// ===
+
+	private final int memoryIncrement = 60000;
 
 	private int[] memory = new int[ 60000 ];
-	private char[] commands;
+	private String programText;
 	private int programPointer;
 	private int memoryPointer;
-	private ArrayList loopStarts = new ArrayList();
+	private List<Integer> loopStarts = new ArrayList<Integer>();
 
-	public Brainfuck( String commands )
+	// ==== constructors ====
+
+	public Brainfuck( final String programText )
 	{
-		this.commands = commands.toCharArray();
+		this.programText = programText;
 	}
+
+	// ==== interface Runnable implementation ====
 
 	public void run()
 	{
 		programPointer = 0;
-		while ( programPointer < commands.length )
+
+		int command;
+		while ( ( command = readNextCharacter() ) != -1 )
 		{
-			final char command = commands[ programPointer ];
 			programPointer++;
 			switch ( command )
 			{
@@ -58,6 +70,22 @@ public class Brainfuck
 		}
 	}
 
+	// ==== private methods ====
+
+	private int readNextCharacter()
+	{
+		if ( programPointer < programText.length() )
+		{
+			return programText.charAt( programPointer );
+		}
+		else
+		{
+			return -1;
+		}
+	}
+
+	// --- brainfuck commands implementation ---
+
 	private void input()
 	{
 		throw new UnsupportedOperationException( "Not yet implemented" );
@@ -71,23 +99,34 @@ public class Brainfuck
 		}
 		else
 		{
-			programPointer = ( (Integer) loopStarts.get( 0 ) ).intValue();
+			programPointer = loopStarts.get( 0 );
 		}
 	}
 
 	private void loopStart()
 	{
-		loopStarts.add( 0, new Integer( programPointer ) );
+		loopStarts.add( 0, programPointer );
 	}
 
 	private void moveRight()
 	{
 		memoryPointer++;
+
+		if ( memoryPointer >= memory.length )
+		{
+			int[] newMemory = new int[ memory.length + memoryIncrement ];
+			System.arraycopy( memory, 0, newMemory, 0, memory.length );
+			memory = newMemory;
+		}
 	}
 
 	private void moveLeft()
 	{
 		memoryPointer--;
+		if ( memoryPointer < 0 )
+		{
+			throw new RuntimeException( "Memory underflow" );
+		}
 	}
 
 	private void decrement()
